@@ -1,9 +1,5 @@
 package concourse
 
-import (
-	"testing"
-)
-
 //                      +---------+                            +---------+
 // +-------------+      |         |       +------------+       |         |
 // | resource-x  +------+         +-------+ resource-y +-------+         |
@@ -51,10 +47,14 @@ func getMockPipelineState() *PipelineState {
 					{Name: "resource-y"},
 				},
 				Builds: []Build{
-					{Id: "1", BuildInputs: []BuildResource{
-						{ResourceName: "resource-x", VersionSha256: "12345"},
-						{ResourceName: "resource-y", VersionSha256: "abcde"},
-					}},
+					{
+						Id: "1",
+						BuildInputs: []BuildResource{
+							{ResourceName: "resource-x", VersionSha256: "12345"},
+							{ResourceName: "resource-y", VersionSha256: "abcde"},
+						},
+						Status: "passed",
+					},
 				},
 			},
 		},
@@ -68,24 +68,15 @@ func getMockResources() []Resource {
 			DiscoveredVersions: []Version{
 				{Sha256: "12345", DiscoveryDate: "1"},
 				{Sha256: "23456", DiscoveryDate: "2"},
-				{Sha256: "34567", DiscoveryDate: "2"},
+				{Sha256: "34567", DiscoveryDate: "3"},
 			},
 		},
 		{
 			Name: "resource-y",
 			DiscoveredVersions: []Version{
-				{Sha256: "12345", DiscoveryDate: "1"},
-				{Sha256: "23456", DiscoveryDate: "2"},
+				{Sha256: "abcde", DiscoveryDate: "1"},
+				{Sha256: "lmnop", DiscoveryDate: "2"},
 			},
 		},
-	}
-}
-
-func TestMock(t *testing.T) {
-	pipeline := getMockPipelineState()
-	expected := "pipeline-a"
-	received := pipeline.Name
-	if received != expected {
-		t.Errorf("expected %s, but got %s", expected, received)
 	}
 }

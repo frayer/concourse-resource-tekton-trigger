@@ -40,3 +40,9 @@ type Version struct {
 	Sha256        string `json:"sha256"`
 	DiscoveryDate string `json:"discoveryDate"`
 }
+
+type BuildAction struct {
+	Action         string          `json:"action"`
+	JobName        string          `json:"jobName"`
+	ResourceInputs []BuildResource `json:"resourceInputs"`
+}
