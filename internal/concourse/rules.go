@@ -4,77 +4,87 @@ import (
 	"sort"
 )
 
-func NextBuildActions(ps *PipelineState) []BuildAction {
+const (
+	actionExecute = "execute"
+)
+
+func NextBuildActions(ps PipelineState) []BuildAction {
 	buildActions := []BuildAction{}
+
+	resources := nameMappedResources(ps.Resources)
 
 	for _, job := range ps.Jobs {
 		buildAction := BuildAction{
-			Action:         "execute",
 			JobName:        job.Name,
 			ResourceInputs: []BuildResource{},
 		}
+		availableInputsCanTrigger := false
 
-		for _, input := range job.Inputs {
-			resourceName := input.Name
-			latestResourceVersion := latestAvailableResourceVersion(ps.Resources, resourceName)
-			if !resourceVersionAlreadyProcessed(job, resourceName, latestResourceVersion.Sha256) {
-				buildAction.ResourceInputs = append(buildAction.ResourceInputs, BuildResource{
-					ResourceName:  resourceName,
-					VersionSha256: latestResourceVersion.Sha256,
-				})
+		resourceInputNames := gatherInputNames(job)
+		for _, resourceInputName := range resourceInputNames {
+			resourceVersions := resources[resourceInputName].Versions
+			latestResourceVersionForJob := latestResourceVersionForJob(resourceVersions)
+
+			buildResource := BuildResource{
+				ResourceName:  resourceInputName,
+				VersionSha256: latestResourceVersionForJob.Sha256,
 			}
+			buildAction.ResourceInputs = append(buildAction.ResourceInputs, buildResource)
+
+			availableInputsCanTrigger = availableInputsCanTrigger || resourceVersionCanTriggerJob(latestResourceVersionForJob, job.Name)
 		}
 
-		if len(buildAction.ResourceInputs) > 0 {
-			buildActions = append(buildActions, buildAction)
+		if availableInputsCanTrigger {
+			buildAction.Action = actionExecute
 		}
+
+		buildActions = append(buildActions, buildAction)
 	}
 
 	return buildActions
 }
 
-func mapByName(items []Job) map[string]Job {
-	nameKeyedMap := make(map[string]Job)
+func gatherInputNames(job JobDefinition) []string {
+	jds := []string{}
+	for _, input := range job.Inputs {
+		jds = append(jds, input.Name)
+	}
+	return jds
+}
 
-	for _, item := range items {
-		nameKeyedMap[item.Name] = item
+func latestResourceVersionForJob(resourceVersions []ResourceVersion) ResourceVersion {
+	latestResourceVersion := ResourceVersion{}
+
+	if len(resourceVersions) > 0 {
+		sortByDiscoveryDateDescending(resourceVersions)
+		latestResourceVersion = resourceVersions[0]
 	}
 
-	return nameKeyedMap
+	return latestResourceVersion
 }
 
-func latestAvailableResourceVersion(resources []Resource, resourceName string) Version {
-	resourcePos := find(len(resources), func(i int) bool {
-		return resources[i].Name == resourceName
+func sortByDiscoveryDateDescending(resourceVersions []ResourceVersion) {
+	sort.Slice(resourceVersions, func(i, j int) bool {
+		return resourceVersions[i].DiscoveryDate > resourceVersions[j].DiscoveryDate
 	})
-
-	resource := resources[resourcePos]
-
-	sort.Slice(resource.DiscoveredVersions, func(i, j int) bool {
-		return resource.DiscoveredVersions[i].DiscoveryDate < resource.DiscoveredVersions[j].DiscoveryDate
-	})
-
-	return resource.DiscoveredVersions[len(resource.DiscoveredVersions)-1]
 }
 
-func resourceVersionAlreadyProcessed(job Job, resourceName string, version string) bool {
-	for _, build := range job.Builds {
-		for _, input := range build.BuildInputs {
-			if input.VersionSha256 == version && input.ResourceName == resourceName {
-				return true
-			}
+func resourceVersionCanTriggerJob(resourceVersion ResourceVersion, jobName string) bool {
+	existingBuildFoundForJob := false
+
+	for _, jobInputHistory := range resourceVersion.JobInputs {
+		if jobInputHistory.JobName == jobName && len(jobInputHistory.Builds) > 0 {
+			existingBuildFoundForJob = true
 		}
 	}
 
-	return false
+	return !existingBuildFoundForJob
 }
 
-func find(n int, predicate func(int) bool) int {
-	var i int
-	for i = 0; i < n; i++ {
-		if predicate(i) {
-			return i
-		}
+func nameMappedResources(resources []PipelineResource) map[string]PipelineResource {
+	mappedPipelineResources := make(map[string]PipelineResource)
+	for _, resource := range resources {
+		mappedPipelineResources[resource.Name] = resource
 	}
-	return i + 1
+	return mappedPipelineResources
 }

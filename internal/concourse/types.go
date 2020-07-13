@@ -1,44 +1,48 @@
 package concourse
 
 type PipelineState struct {
-	Name      string     `json:"name"`
-	Resources []Resource `json:"resources"`
-	Jobs      []Job      `json:"jobs"`
+	Name      string             `json:"name"`
+	Resources []PipelineResource `json:"resources"`
+	Jobs      []JobDefinition    `json:"jobs"`
 }
 
-type Job struct {
-	Name    string         `json:"name"`
-	Inputs  []ResourceStep `json:"inputs,omitempty"`
-	Outputs []ResourceStep `json:"outputs,omitempty"`
-	Builds  []Build        `json:"builds,omitempty"`
+type PipelineResource struct {
+	Name     string            `json:"name"`
+	Versions []ResourceVersion `json:"versions"`
 }
 
-type ResourceStep struct {
-	Name    string   `json:"resource"`
-	Passed  []string `json:"passed,omitempty"`
-	Trigger bool     `json:"trigger,omitempty"`
+type ResourceVersion struct {
+	Sha256        string                      `json:"sha256"`
+	DiscoveryDate string                      `json:"discoveryDate"`
+	JobInputs     []ResourceVersionJobHistory `json:"jobInputs"`
+	JobOutputs    []ResourceVersionJobHistory `json:"jobOutputs"`
+}
+
+type ResourceVersionJobHistory struct {
+	JobName string  `json:"jobName"`
+	Builds  []Build `json:"builds"`
 }
 
 type Build struct {
-	Id           string          `json:"id"`
-	BuildInputs  []BuildResource `json:"buildInputs"`
-	BuildOutputs []BuildResource `json:"buildOutputs"`
-	Status       string          `json:"string"`
+	Id     uint   `json:"id"`
+	Status string `json:"status"`
+}
+
+type JobDefinition struct {
+	Name    string        `json:"name"`
+	Inputs  []JobResource `json:"inputs"`
+	Outputs []JobResource `json:"outputs"`
+}
+
+type JobResource struct {
+	Name    string   `json:"name"`
+	Trigger bool     `json:"trigger"`
+	Passed  []string `json:"passed"`
 }
 
 type BuildResource struct {
 	ResourceName  string `json:"resourceName"`
 	VersionSha256 string `json:"versionSha256"`
-}
-
-type Resource struct {
-	Name               string    `json:"name"`
-	DiscoveredVersions []Version `json:"discoveredVersions"`
-}
-
-type Version struct {
-	Sha256        string `json:"sha256"`
-	DiscoveryDate string `json:"discoveryDate"`
 }
 
 type BuildAction struct {

@@ -1,0 +1,110 @@
+{
+  "name": "pipeline-a",
+  "resources": [
+    {
+      "name": "resource-a",
+      "versions": [
+        {
+          "sha256": "000",
+          "discoveryDate": "2000-01-01T00:00:00Z",
+          "jobInputs": [
+            {
+              "jobName": "job-1",
+              "builds": [ { "id": 1, "status": "successful" }, { "id": 2, "status": "successful" } ]
+            }
+          ],
+          "jobOutputs": []
+        },
+        {
+          "sha256": "001",
+          "discoveryDate": "2000-01-01T00:00:10Z",
+          "jobInputs": [],
+          "jobOutputs": []
+        }
+      ]
+    },
+    {
+      "name": "resource-b",
+      "versions": [
+        {
+          "sha256": "000",
+          "discoveryDate": "2000-01-01T00:00:00Z",
+          "jobInputs": [],
+          "jobOutputs": []
+        },
+        {
+          "sha256": "001",
+          "discoveryDate": "2000-01-01T00:00:10Z",
+          "jobInputs": [
+            {
+              "jobName": "job-3",
+              "builds": [ { "id": 1, "status": "successful" } ]
+            }
+          ],
+          "jobOutputs": [
+            {
+              "jobName": "job-1",
+              "builds": [ { "id": 1, "status": "successful" }, { "id": 2, "status": "successful" } ]
+            },
+            {
+              "jobName": "job-2",
+              "builds": [ { "id": 1, "status": "successful" }, { "id": 2, "status": "successful" } ]
+            }
+          ]
+        },
+        {
+          "sha256": "002",
+          "discoveryDate": "2000-01-01T00:00:20Z",
+          "jobInputs": [],
+          "jobOutputs": [
+            {
+              "jobName": "job-1",
+              "builds": [ { "id": 2, "status": "successful" }, { "id": 3, "status": "successful" } ]
+            }
+          ]
+        },
+        {
+          "sha256": "003",
+          "discoveryDate": "2000-01-01T00:00:30Z",
+          "jobInputs": [],
+          "jobOutputs": [
+            {
+              "jobName": "job-1",
+              "builds": [ { "id": 4, "status": "successful" }, { "id": 5, "status": "successful" } ]
+            },
+            {
+              "jobName": "job-2",
+              "builds": [ { "id": 3, "status": "successful" }, { "id": 4, "status": "successful" } ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "jobs": [
+    {
+      "name": "job-1",
+      "inputs": [
+        { "name": "resource-a", "trigger": true, "passed": [] },
+        { "name": "resource-b", "trigger": true, "passed": [] }
+      ],
+      "outputs": [
+        { "name": "resource-b" }
+      ]
+    },
+    {
+      "name": "job-2",
+      "inputs": [],
+      "outputs": [
+        { "name": "resource-b" }
+      ]
+    },
+    {
+      "name": "job-3",
+      "inputs": [
+        { "name": "resource-b", "trigger": true, "passed": [ "job-1", "job-2" ] }
+      ],
+      "outputs": []
+    }
+  ]
+}
