@@ -1,11 +1,10 @@
-package concourse_test
+package concourse
 
 import (
 	"encoding/json"
 	"io/ioutil"
 	"testing"
 
-	c "github.com/frayer/concourse-resource-tekton-trigger/internal/concourse"
 	"github.com/stretchr/testify/suite"
 	"gotest.tools/assert"
 )
@@ -13,15 +12,16 @@ import (
 type RulesTestSuite struct {
 	suite.Suite
 
-	ps      c.PipelineState
-	actions []c.BuildAction
+	ps      PipelineState
+	actions []BuildAction
 }
 
 func (suite *RulesTestSuite) SetupTest() {
 	jsonFile, _ := ioutil.ReadFile("testdata/PipelineState-reference.json")
-	suite.ps = c.PipelineState{}
+	suite.ps = PipelineState{}
 	json.Unmarshal(jsonFile, &suite.ps)
-	suite.actions = c.NextBuildActions(suite.ps)
+
+	suite.actions = NextBuildActions(suite.ps)
 }
 
 func TestRulesTestSuite(t *testing.T) {
@@ -32,24 +32,24 @@ func (suite *RulesTestSuite) TestBasicJsonLoad() {
 	assert.Equal(suite.T(), "pipeline-a", suite.ps.Name)
 }
 
-func buildActionByJobName(bas []c.BuildAction, jobName string) c.BuildAction {
+func buildActionByJobName(bas []BuildAction, jobName string) BuildAction {
 	for _, ba := range bas {
 		if ba.JobName == jobName {
 			return ba
 		}
 	}
 
-	return c.BuildAction{}
+	return BuildAction{}
 }
 
-func buildResourceByResourceName(brs []c.BuildResource, resourceName string) c.BuildResource {
+func buildResourceByResourceName(brs []BuildResource, resourceName string) BuildResource {
 	for _, br := range brs {
 		if br.ResourceName == resourceName {
 			return br
 		}
 	}
 
-	return c.BuildResource{}
+	return BuildResource{}
 }
 
 func (suite *RulesTestSuite) TestBuildAction() {
@@ -81,5 +81,79 @@ func (suite *RulesTestSuite) TestBuildAction() {
 	assert.Equal(suite.T(), "job-3", baJob3.JobName)
 	assert.Equal(suite.T(), 1, len(baJob3.ResourceInputs))
 	assert.Equal(suite.T(), "resource-b", buildResourceB.ResourceName)
-	assert.Equal(suite.T(), "003", buildResourceB.VersionSha256)
+	assert.Equal(suite.T(), "001", buildResourceB.VersionSha256)
+}
+
+func (suite *RulesTestSuite) TestSuccessfulForAllProfiles() {
+	// All successful Job Inputs
+	resourceVersion := ResourceVersion{
+		JobInputs: []ResourceVersionJobHistory{
+			{JobName: "job-1", Builds: []Build{
+				{Status: BuildStatusSuccess},
+			}},
+			{JobName: "job-2", Builds: []Build{
+				{Status: BuildStatusSuccess},
+			}},
+		},
+	}
+	resourceJobProfiles := []upstreamJobResourceProfile{
+		{jobName: "job-1", resourceDirection: ResourceDirectionInput},
+		{jobName: "job-2", resourceDirection: ResourceDirectionInput},
+	}
+	assert.Equal(suite.T(), true, successfulForAllProfiles(resourceVersion, resourceJobProfiles))
+
+	// All Job Inputs, one error status
+	resourceVersion = ResourceVersion{
+		JobInputs: []ResourceVersionJobHistory{
+			{JobName: "job-1", Builds: []Build{
+				{Status: BuildStatusError},
+			}},
+			{JobName: "job-2", Builds: []Build{
+				{Status: BuildStatusSuccess},
+			}},
+		},
+	}
+	resourceJobProfiles = []upstreamJobResourceProfile{
+		{jobName: "job-1", resourceDirection: ResourceDirectionInput},
+		{jobName: "job-2", resourceDirection: ResourceDirectionInput},
+	}
+	assert.Equal(suite.T(), false, successfulForAllProfiles(resourceVersion, resourceJobProfiles))
+
+	// One successful Job Input, one successful Job Output
+	resourceVersion = ResourceVersion{
+		JobInputs: []ResourceVersionJobHistory{
+			{JobName: "job-1", Builds: []Build{
+				{Status: BuildStatusSuccess},
+			}},
+		},
+		JobOutputs: []ResourceVersionJobHistory{
+			{JobName: "job-2", Builds: []Build{
+				{Status: BuildStatusSuccess},
+			}},
+		},
+	}
+	resourceJobProfiles = []upstreamJobResourceProfile{
+		{jobName: "job-1", resourceDirection: ResourceDirectionInput},
+		{jobName: "job-2", resourceDirection: ResourceDirectionOutput},
+	}
+	assert.Equal(suite.T(), true, successfulForAllProfiles(resourceVersion, resourceJobProfiles))
+
+	// One successful Job Input, one error status Job Output
+	resourceVersion = ResourceVersion{
+		JobInputs: []ResourceVersionJobHistory{
+			{JobName: "job-1", Builds: []Build{
+				{Status: BuildStatusSuccess},
+			}},
+		},
+		JobOutputs: []ResourceVersionJobHistory{
+			{JobName: "job-2", Builds: []Build{
+				{Status: BuildStatusError},
+			}},
+		},
+	}
+	resourceJobProfiles = []upstreamJobResourceProfile{
+		{jobName: "job-1", resourceDirection: ResourceDirectionInput},
+		{jobName: "job-2", resourceDirection: ResourceDirectionOutput},
+	}
+	assert.Equal(suite.T(), false, successfulForAllProfiles(resourceVersion, resourceJobProfiles))
 }

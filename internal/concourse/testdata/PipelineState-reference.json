@@ -10,7 +10,7 @@
           "jobInputs": [
             {
               "jobName": "job-1",
-              "builds": [ { "id": 1, "status": "successful" }, { "id": 2, "status": "successful" } ]
+              "builds": [ { "id": 1, "status": "success" }, { "id": 2, "status": "success" } ]
             }
           ],
           "jobOutputs": []
@@ -38,17 +38,17 @@
           "jobInputs": [
             {
               "jobName": "job-3",
-              "builds": [ { "id": 1, "status": "successful" } ]
+              "builds": [ { "id": 1, "status": "success" } ]
             }
           ],
           "jobOutputs": [
             {
               "jobName": "job-1",
-              "builds": [ { "id": 1, "status": "successful" }, { "id": 2, "status": "successful" } ]
+              "builds": [ { "id": 1, "status": "success" }, { "id": 2, "status": "success" } ]
             },
             {
               "jobName": "job-2",
-              "builds": [ { "id": 1, "status": "successful" }, { "id": 2, "status": "successful" } ]
+              "builds": [ { "id": 1, "status": "success" }, { "id": 2, "status": "success" } ]
             }
           ]
         },
@@ -59,7 +59,7 @@
           "jobOutputs": [
             {
               "jobName": "job-1",
-              "builds": [ { "id": 2, "status": "successful" }, { "id": 3, "status": "successful" } ]
+              "builds": [ { "id": 2, "status": "success" }, { "id": 3, "status": "success" } ]
             }
           ]
         },
@@ -70,11 +70,11 @@
           "jobOutputs": [
             {
               "jobName": "job-1",
-              "builds": [ { "id": 4, "status": "successful" }, { "id": 5, "status": "successful" } ]
+              "builds": [ { "id": 4, "status": "success" }, { "id": 5, "status": "success" } ]
             },
             {
               "jobName": "job-2",
-              "builds": [ { "id": 3, "status": "successful" }, { "id": 4, "status": "successful" } ]
+              "builds": [ { "id": 3, "status": "error" }, { "id": 4, "status": "error" } ]
             }
           ]
         }
@@ -96,7 +96,7 @@
       "name": "job-2",
       "inputs": [],
       "outputs": [
-        { "name": "resource-b" }
+        { "name": "resource-b", "trigger": false , "passed": []}
       ]
     },
     {
