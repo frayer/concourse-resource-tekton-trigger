@@ -28,10 +28,8 @@ func NextBuildActions(ps PipelineState) []BuildAction {
 
 		for _, input := range job.Inputs {
 			resource := ps.resource(input.Name)
-			var latestVersionForJob ResourceVersion
-
 			upstreamJobResourceProfiles := getUpstreamJobResourceProfile(ps, input)
-			latestVersionForJob = latestResourceVersionForJob(resource.Versions, upstreamJobResourceProfiles)
+			latestVersionForJob := latestResourceVersionForJob(resource.Versions, upstreamJobResourceProfiles)
 
 			buildResource := BuildResource{
 				ResourceName:  input.Name,
